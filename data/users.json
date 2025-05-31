@@ -1,0 +1,12 @@
+{
+    "users": [
+        {
+            "username": "testuser",
+            "hashed_password": "$2b$12$fqwaP3oN3Oec/piG88WZPeanwFMnGlp0PvoqugMyHm.QHuVtgxMCu"
+        },
+        {
+            "username": "12345",
+            "hashed_password": "$2b$12$zryx/NmZaVrXbcxZmdEfuuQKySz/QqSoElmlwkS/Dcd.xHy.JN/b."
+        }
+    ]
+}
