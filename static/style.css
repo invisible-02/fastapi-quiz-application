@@ -1,0 +1,171 @@
+/* Custom styles on top of Tailwind */
+
+/* Smooth transitions */
+.fade-enter {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.fade-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 300ms, transform 300ms;
+}
+
+/* Selected option styling */
+.option-btn.selected {
+    border-color: #3B82F6;
+    background-color: #EFF6FF;
+}
+
+/* Progress bar animation */
+@keyframes progress {
+    from { width: 0; }
+    to { width: var(--progress-width); }
+}
+
+#progressBar {
+    transition: width 0.5s ease-in-out;
+}
+
+/* Toast animation */
+@keyframes slideIn {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+.toast-show {
+    animation: slideIn 0.3s forwards;
+}
+
+.toast-hide {
+    animation: slideOut 0.3s forwards;
+}
+
+/* Button hover effects */
+.option-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Form input focus effects */
+input:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Card hover effect */
+.card-hover {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
+/* Loading spinner */
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3B82F6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .option-btn {
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* Disable button styles */
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Error state for inputs */
+.input-error {
+    border-color: #EF4444;
+}
+
+.error-message {
+    color: #EF4444;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Success state for inputs */
+.input-success {
+    border-color: #10B981;
+}
+
+/* Tab transitions */
+.tab-content {
+    transition: opacity 0.2s ease-in-out;
+}
+
+.tab-content.hidden {
+    opacity: 0;
+}
+
+/* Quiz completion celebration animation */
+@keyframes celebrate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.celebration {
+    animation: celebrate 0.5s ease-in-out;
+}
