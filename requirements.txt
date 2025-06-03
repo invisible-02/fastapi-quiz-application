@@ -1,9 +1,10 @@
+
 fastapi
 uvicorn
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 pydantic
-databases
-jose
+databases[sqlite]
+aiosqlite
 sqlalchemy
