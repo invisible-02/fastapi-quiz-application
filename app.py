@@ -6,14 +6,16 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
-import json
-import os
+from pydantic import BaseModel
 import random
+
+from database import database, users, questions, assignments
 
 # Security configurations
 SECRET_KEY = "your-secret-key-for-jwt"  # In production, use a secure secret key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ASSIGNED_QUESTION_COUNT = 10
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -22,45 +24,17 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# File paths
-USERS_FILE = "data/users.json"
-QUESTIONS_FILE = "data/questions.json"
-ASSIGNMENTS_FILE = "data/user_assignments.json"
-
 # Helper functions
-def get_users():
-    if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, 'r') as f:
-            return json.load(f)['users']
-    return []
-
-def save_users(users):
-    with open(USERS_FILE, 'w') as f:
-        json.dump({"users": users}, f, indent=4)
-
-def get_questions():
-    with open(QUESTIONS_FILE, 'r') as f:
-        return json.load(f)['questions']
-
-def get_user_assignments():
-    if os.path.exists(ASSIGNMENTS_FILE):
-        with open(ASSIGNMENTS_FILE, 'r') as f:
-            return json.load(f)
-    return {}
-
-def save_user_assignments(assignments):
-    with open(ASSIGNMENTS_FILE, 'w') as f:
-        json.dump(assignments, f, indent=4)
-
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-def get_user(username: str):
-    users = get_users()
-    return next((user for user in users if user["username"] == username), None)
+async def get_user(username: str):
+    query = users.select().where(users.c.username == username)
+    user = await database.fetch_one(query)
+    return user
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -85,33 +59,37 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = get_user(username)
+    user = await get_user(username)
     if user is None:
         raise credentials_exception
     return user
 
+@app.on_event("startup")
+async def startup():
+    await database.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
+
 # Routes
 @app.post("/register")
 async def register(form_data: OAuth2PasswordRequestForm = Depends()):
-    users = get_users()
-    if any(user["username"] == form_data.username for user in users):
+    user = await get_user(form_data.username)
+    if user:
         raise HTTPException(
             status_code=400,
             detail="Username already registered"
         )
     
     hashed_password = get_password_hash(form_data.password)
-    new_user = {
-        "username": form_data.username,
-        "hashed_password": hashed_password
-    }
-    users.append(new_user)
-    save_users(users)
+    query = users.insert().values(username=form_data.username, hashed_password=hashed_password)
+    await database.execute(query)
     return {"message": "User created successfully"}
 
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = get_user(form_data.username)
+    user = await get_user(form_data.username)
     if not user or not verify_password(form_data.password, user["hashed_password"]):
         raise HTTPException(
             status_code=400,
@@ -126,22 +104,42 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 @app.get("/start")
 async def start_quiz(current_user: dict = Depends(get_current_user)):
-    questions = get_questions()
-    if len(questions) < 50:
+    # Fetch all questions
+    query = questions.select()
+    all_questions = await database.fetch_all(query)
+    if len(all_questions) < ASSIGNED_QUESTION_COUNT:
         raise HTTPException(status_code=400, detail="Insufficient questions available")
     
-    selected_questions = random.sample(questions, 50)
-    assignments = get_user_assignments()
-    assignments[current_user["username"]] = {
-        "assigned_questions": selected_questions,
-        "answers": {},
-        "start_time": datetime.utcnow().isoformat()
-    }
-    save_user_assignments(assignments)
+    # Randomly select questions
+    selected_questions = random.sample(all_questions, ASSIGNED_QUESTION_COUNT)
+    selected_ids = [q["id"] for q in selected_questions]
     
-    return {"message": "Quiz started", "questions": selected_questions}
-
-from pydantic import BaseModel
+    # Remove selected questions from questions table
+    for qid in selected_ids:
+        delete_query = questions.delete().where(questions.c.id == qid)
+        await database.execute(delete_query)
+    
+    # Assign questions to user
+    for q in selected_questions:
+        insert_query = assignments.insert().values(
+            user_id=current_user["id"],
+            question_id=q["id"],
+            answer=None,
+            assigned_at=datetime.utcnow()
+        )
+        await database.execute(insert_query)
+    
+    # Prepare response questions with options parsed from JSON string
+    response_questions = []
+    import json as js
+    for q in selected_questions:
+        response_questions.append({
+            "id": q["id"],
+            "question": q["question_text"],
+            "options": js.loads(q["options"])
+        })
+    
+    return {"message": "Quiz started", "questions": response_questions}
 
 class AnswerInput(BaseModel):
     question_id: int
@@ -152,36 +150,46 @@ async def submit_answer(
     answer_input: AnswerInput,
     current_user: dict = Depends(get_current_user)
 ):
-    assignments = get_user_assignments()
-    user_assignment = assignments.get(current_user["username"])
-    
-    if not user_assignment:
-        raise HTTPException(status_code=400, detail="Quiz not started")
-    
-    if not any(q["id"] == answer_input.question_id for q in user_assignment["assigned_questions"]):
+    # Check if question is assigned to user
+    query = assignments.select().where(
+        (assignments.c.user_id == current_user["id"]) &
+        (assignments.c.question_id == answer_input.question_id)
+    )
+    assignment = await database.fetch_one(query)
+    if not assignment:
         raise HTTPException(status_code=404, detail="Question not assigned")
     
     if answer_input.answer not in ["Yes", "No"]:
         raise HTTPException(status_code=400, detail="Invalid answer. Must be 'Yes' or 'No'")
     
-    user_assignment["answers"][str(answer_input.question_id)] = answer_input.answer
-    save_user_assignments(assignments)
+    # Update answer
+    update_query = assignments.update().where(
+        (assignments.c.user_id == current_user["id"]) &
+        (assignments.c.question_id == answer_input.question_id)
+    ).values(answer=answer_input.answer)
+    await database.execute(update_query)
     
     return {"message": "Answer saved successfully"}
 
 @app.get("/progress")
 async def get_progress(current_user: dict = Depends(get_current_user)):
-    assignments = get_user_assignments()
-    user_assignment = assignments.get(current_user["username"])
+    # Count answered questions
+    answered_query = assignments.select().where(
+        (assignments.c.user_id == current_user["id"]) &
+        (assignments.c.answer != None)
+    )
+    answered = await database.fetch_all(answered_query)
+    answered_count = len(answered)
     
-    if not user_assignment:
-        return {"progress": 0, "total_questions": 50}
+    # Count total assigned questions
+    total_query = assignments.select().where(assignments.c.user_id == current_user["id"])
+    total = await database.fetch_all(total_query)
+    total_count = len(total)
     
-    answered = len(user_assignment["answers"])
     return {
-        "progress": answered,
-        "total_questions": 50,
-        "percentage": (answered / 50) * 100
+        "progress": answered_count,
+        "total_questions": total_count,
+        "percentage": (answered_count / total_count) * 100 if total_count > 0 else 0
     }
 
 # Serve the HTML page
