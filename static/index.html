@@ -1,204 +1,345 @@
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Data Collection</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-            rel="stylesheet"
-        />
-        <link
-            rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-        />
-    <link rel="stylesheet" href="/static/style.css" />
-    </head>
-    <body class="bg-gray-50 min-h-screen font-['Inter']">
-        <!-- Auth Section -->
-        <div id="authSection" class="container mx-auto px-4 py-8">
-            <div
-                class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl p-6"
-            >
-                <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-gray-900">
-                        Data Collection Application
-                    </h1>
-                    <p class="text-gray-600 mt-2">
-                        Please login or register to continue
-                    </p>
-                </div>
+// State management
+let currentUser = null;
+let currentQuestions = [];
+let currentQuestionIndex = 0;
+let userAnswers = {};
+let accessToken = null;
 
-                <!-- Auth Tabs -->
-                <div class="flex mb-4">
-                    <button
-                        id="loginTab"
-                        class="flex-1 py-2 px-4 text-center border-b-2 border-blue-500 text-blue-500 font-medium"
-                    >
-                        Login
-                    </button>
-                    <button
-                        id="registerTab"
-                        class="flex-1 py-2 px-4 text-center border-b-2 border-gray-200 text-gray-500 font-medium"
-                    >
-                        Register
-                    </button>
-                </div>
+// DOM Elements
+const authSection = document.getElementById('authSection');
+const quizSection = document.getElementById('quizSection');
+const loginForm = document.getElementById('loginForm');
+const registerForm = document.getElementById('registerForm');
+const loginTab = document.getElementById('loginTab');
+const registerTab = document.getElementById('registerTab');
+const startQuizBtn = document.getElementById('startQuizBtn');
+const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const questionText = document.getElementById('questionText');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+const messageToast = document.getElementById('messageToast');
+const messageText = document.getElementById('messageText');
 
-                <!-- Login Form -->
-                <form id="loginForm" class="space-y-4">
-                    <div>
-                        <label
-                            class="block text-gray-700 text-sm font-bold mb-2"
-                            for="loginUsername"
-                            >Username</label
-                        >
-                        <input
-                            type="text"
-                            id="loginUsername"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label
-                            class="block text-gray-700 text-sm font-bold mb-2"
-                            for="loginPassword"
-                            >Password</label
-                        >
-                        <input
-                            type="password"
-                            id="loginPassword"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200"
-                    >
-                        Login
-                    </button>
-                </form>
+// Event Listeners
+loginTab.addEventListener('click', () => switchForm('login'));
+registerTab.addEventListener('click', () => switchForm('register'));
+loginForm.addEventListener('submit', handleLogin);
+registerForm.addEventListener('submit', handleRegister);
+startQuizBtn.addEventListener('click', startQuiz);
+nextQuestionBtn.addEventListener('click', showNextQuestion);
+logoutBtn.addEventListener('click', handleLogout);
 
-                <!-- Register Form -->
-                <form id="registerForm" class="space-y-4 hidden">
-                    <div>
-                        <label
-                            class="block text-gray-700 text-sm font-bold mb-2"
-                            for="registerUsername"
-                            >Username</label
-                        >
-                        <input
-                            type="text"
-                            id="registerUsername"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label
-                            class="block text-gray-700 text-sm font-bold mb-2"
-                            for="registerPassword"
-                            >Password</label
-                        >
-                        <input
-                            type="password"
-                            id="registerPassword"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200"
-                    >
-                        Register
-                    </button>
-                </form>
-            </div>
-        </div>
+document.querySelectorAll('.option-btn').forEach(button => {
+    button.addEventListener('click', () => handleAnswerSelection(button));
+});
 
-        <!-- Quiz Section -->
-        <div id="quizSection" class="container mx-auto px-4 py-8 hidden">
-            <div class="max-w-2xl mx-auto">
-                <!-- Header with Progress -->
-                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-bold text-gray-900">
-                            Quiz Progress
-                        </h2>
-                        <button
-                            id="logoutBtn"
-                            class="text-gray-600 hover:text-gray-800"
-                        >
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </button>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div
-                            id="progressBar"
-                            class="bg-blue-500 h-2.5 rounded-full"
-                            style="width: 0%"
-                        ></div>
-                    </div>
-                    <p id="progressText" class="text-gray-600 mt-2 text-center">
-                        0 of 100 questions answered
-                    </p>
-                </div>
+// Form switching
+function switchForm(form) {
+    if (form === 'login') {
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+        loginTab.classList.add('border-blue-500', 'text-blue-500');
+        loginTab.classList.remove('border-gray-200', 'text-gray-500');
+        registerTab.classList.add('border-gray-200', 'text-gray-500');
+        registerTab.classList.remove('border-blue-500', 'text-blue-500');
+    } else {
+        loginForm.classList.add('hidden');
+        registerForm.classList.remove('hidden');
+        registerTab.classList.add('border-blue-500', 'text-blue-500');
+        registerTab.classList.remove('border-gray-200', 'text-gray-500');
+        loginTab.classList.add('border-gray-200', 'text-gray-500');
+        loginTab.classList.remove('border-blue-500', 'text-blue-500');
+    }
+}
 
-                <!-- Question Card -->
-                <div
-                    id="questionCard"
-                    class="bg-white rounded-xl shadow-md p-6"
-                >
-                    <h3
-                        id="questionText"
-                        class="text-xl font-semibold text-gray-900 mb-6"
-                    >
-                        Click Start Quiz to begin
-                    </h3>
-                    <div id="optionsContainer" class="space-y-4 mb-6">
-                        <button
-                            class="option-btn w-full py-3 px-6 text-left border-2 border-gray-200 rounded-lg hover:border-blue-500 focus:outline-none focus:border-blue-500 transition duration-200"
-                            data-value="Yes"
-                        >
-                            Yes
-                        </button>
-                        <button
-                            class="option-btn w-full py-3 px-6 text-left border-2 border-gray-200 rounded-lg hover:border-blue-500 focus:outline-none focus:border-blue-500 transition duration-200"
-                            data-value="No"
-                        >
-                            No
-                        </button>
-                    </div>
-                    <div class="flex justify-between">
-                        <button
-                            id="startQuizBtn"
-                            class="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition duration-200"
-                        >
-                            Start Quiz
-                        </button>
-                        <button
-                            id="nextQuestionBtn"
-                            class="bg-gray-500 text-white py-2 px-6 rounded-md hover:bg-gray-600 transition duration-200 hidden"
-                        >
-                            Next Question
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+// Toast message
+function showMessage(message, isError = false) {
+    messageText.textContent = message;
+    messageToast.classList.remove('bg-gray-800', 'bg-red-500');
+    messageToast.classList.add(isError ? 'bg-red-500' : 'bg-gray-800');
+    messageToast.classList.add('toast-show');
 
-        <!-- Message Toast -->
-        <div
-            id="messageToast"
-            class="fixed bottom-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-full transition-transform duration-300 opacity-0"
-        >
-            <p id="messageText"></p>
-        </div>
+    setTimeout(() => {
+        messageToast.classList.remove('toast-show');
+        messageToast.classList.add('toast-hide');
+    }, 3000);
+}
 
-    <script src="/static/script.js"></script>
-    </body>
-</html>
+// Authentication handlers
+async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
+
+        const response = await fetch('/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            accessToken = data.access_token;
+            currentUser = username;
+            showQuizSection();
+            showMessage('Successfully logged in!');
+        } else {
+            showMessage(data.detail || 'Login failed', true);
+        }
+    } catch (error) {
+        showMessage('An error occurred during login', true);
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    const username = document.getElementById('registerUsername').value;
+    const password = document.getElementById('registerPassword').value;
+
+    try {
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
+
+        const response = await fetch('/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showMessage('Registration successful! Please login.');
+            switchForm('login');
+        } else {
+            showMessage(data.detail || 'Registration failed', true);
+        }
+    } catch (error) {
+        showMessage('An error occurred during registration', true);
+    }
+}
+
+function handleLogout() {
+    accessToken = null;
+    currentUser = null;
+    currentQuestions = [];
+    currentQuestionIndex = 0;
+    userAnswers = {};
+    showAuthSection();
+    showMessage('Successfully logged out!');
+}
+
+// Quiz functionality
+async function startQuiz() {
+    try {
+        const response = await fetch('/start', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            currentQuestions = data.questions;
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            updateProgress();
+            showQuestion();
+            startQuizBtn.classList.add('hidden');
+            nextQuestionBtn.classList.remove('hidden');
+            showMessage('Quiz started!');
+        } else {
+            showMessage(data.detail || 'Failed to start quiz', true);
+        }
+    } catch (error) {
+        showMessage('An error occurred while starting the quiz', true);
+    }
+}
+
+function showQuestion() {
+    if (currentQuestionIndex >= currentQuestions.length) {
+        showMessage('Quiz completed!');
+        questionText.textContent = 'Quiz completed!';
+        nextQuestionBtn.classList.add('hidden');
+        startQuizBtn.classList.remove('hidden');
+        startQuizBtn.textContent = 'Start New Quiz';
+        return;
+    }
+
+    const question = currentQuestions[currentQuestionIndex];
+    questionText.textContent = question.question_text;
+
+    // Reset option selection
+    document.querySelectorAll('.option-btn').forEach(btn => {
+        btn.classList.remove('selected');
+        if (userAnswers[question.id] === btn.dataset.value) {
+            btn.classList.add('selected');
+        }
+    });
+}
+
+async function handleAnswerSelection(button) {
+    const question = currentQuestions[currentQuestionIndex];
+    const answer = button.dataset.value;
+
+    try {
+        const response = await fetch('/answer', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                question_id: question.id,
+                answer: answer
+            })
+        });
+
+        if (response.ok) {
+            userAnswers[question.id] = answer;
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            button.classList.add('selected');
+            updateProgress();
+            showMessage('Answer saved!');
+        } else {
+            const data = await response.json();
+            showMessage(data.detail || 'Failed to save answer', true);
+        }
+    } catch (error) {
+        showMessage('An error occurred while saving the answer', true);
+    }
+}
+
+function showNextQuestion() {
+    if (currentQuestionIndex < currentQuestions.length - 1) {
+        currentQuestionIndex++;
+        showQuestion();
+    } else {
+        showMessage('Quiz completed!');
+        nextQuestionBtn.classList.add('hidden');
+        startQuizBtn.classList.remove('hidden');
+        startQuizBtn.textContent = 'Start New Quiz';
+    }
+}
+
+async function updateProgress() {
+    try {
+        const response = await fetch('/progress', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            const percentage = data.percentage || 0;
+            progressBar.style.width = `${percentage}%`;
+            progressText.textContent = `${data.progress} of ${data.total_questions} questions answered`;
+        }
+    } catch (error) {
+        console.error('Error updating progress:', error);
+    }
+}
+
+// Section visibility
+function showQuizSection() {
+    authSection.classList.add('hidden');
+    quizSection.classList.remove('hidden');
+}
+
+function showAuthSection() {
+    authSection.classList.remove('hidden');
+    quizSection.classList.add('hidden');
+}
+
+const adminSecretKey = "FirstApplication@iitmz"; // Replace with your actual secret key
+
+// Check for existing session
+const savedToken = localStorage.getItem('accessToken');
+if (savedToken) {
+    accessToken = savedToken;
+    showQuizSection();
+    updateProgress();
+}
+
+// Admin Download Section Elements
+const adminDownloadSection = document.getElementById('adminDownloadSection');
+const adminSecretKeyInput = document.getElementById('adminSecretKey');
+const adminDownloadBtn = document.getElementById('adminDownloadBtn');
+const adminDownloadMessage = document.getElementById('adminDownloadMessage');
+
+// Function to show admin download section if secret key matches
+function showAdminDownloadSection() {
+    adminDownloadSection.classList.remove('hidden');
+}
+
+// Function to hide admin download section
+function hideAdminDownloadSection() {
+    adminDownloadSection.classList.add('hidden');
+    adminDownloadMessage.classList.add('hidden');
+    adminSecretKeyInput.value = '';
+}
+
+// Event listener for admin download button
+adminDownloadBtn.addEventListener('click', async () => {
+    const enteredKey = adminSecretKeyInput.value.trim();
+    if (enteredKey !== adminSecretKey) {
+        adminDownloadMessage.textContent = 'Invalid secret key.';
+        adminDownloadMessage.classList.remove('hidden');
+        return;
+    }
+    adminDownloadMessage.classList.add('hidden');
+
+    try {
+        // Fetch complete data download endpoint
+        const response = await fetch('/data/complete-download', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            adminDownloadMessage.textContent = 'Failed to download data.';
+            adminDownloadMessage.classList.remove('hidden');
+            return;
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'complete_quiz_data.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        adminDownloadMessage.textContent = 'Download started.';
+        adminDownloadMessage.classList.remove('hidden');
+    } catch (error) {
+        adminDownloadMessage.textContent = 'An error occurred during download.';
+        adminDownloadMessage.classList.remove('hidden');
+    }
+});
+
+// Show admin download section only if user is logged in
+if (accessToken) {
+    showAdminDownloadSection();
+} else {
+    hideAdminDownloadSection();
+}
