@@ -6,8 +6,11 @@ def record_to_dict(record):
     if record is None:
         return None
 
+    # Convert database record to dict using dict() constructor
     result = {}
-    for key, value in record.items():
+    record_dict = dict(record)
+    
+    for key, value in record_dict.items():
         if key == "options" and isinstance(value, str):
             # Parse JSON string to list for options
             try:
