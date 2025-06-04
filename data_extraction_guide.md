@@ -80,3 +80,12 @@ curl "http://localhost:3000/data/user-progress" \
 - Data is returned in JSON format
 - The database automatically assigns 10 random questions per user
 - Questions are removed from the pool once assigned
+
+
+curl -X POST "http://localhost:3000/token"   -H "Content-Type: application/x-www-form-urlencoded"   -d "username=12345&password=12345"
+
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NSIsImV4cCI6MTc0OTAyNDEwMH0.RJ4-E_gqs8zC8v53ODycwMPMIMyZTEBPrYAyt5Gvz64" "http://0.0.0.0:3000/data/complete-download"
+
+
+
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NSIsImV4cCI6MTc0OTAyNDEwMH0.RJ4-E_gqs8zC8v53ODycwMPMIMyZTEBPrYAyt5Gvz64" "http://0.0.0.0:3000/data/complete-download" -o complete_quiz_data.json
