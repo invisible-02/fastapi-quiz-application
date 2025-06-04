@@ -268,10 +268,78 @@ function showAuthSection() {
     quizSection.classList.add('hidden');
 }
 
+const adminSecretKey = "FirstApplication@iitmz"; // Replace with your actual secret key
+
 // Check for existing session
 const savedToken = localStorage.getItem('accessToken');
 if (savedToken) {
     accessToken = savedToken;
     showQuizSection();
     updateProgress();
+}
+
+// Admin Download Section Elements
+const adminDownloadSection = document.getElementById('adminDownloadSection');
+const adminSecretKeyInput = document.getElementById('adminSecretKey');
+const adminDownloadBtn = document.getElementById('adminDownloadBtn');
+const adminDownloadMessage = document.getElementById('adminDownloadMessage');
+
+// Function to show admin download section if secret key matches
+function showAdminDownloadSection() {
+    adminDownloadSection.classList.remove('hidden');
+}
+
+// Function to hide admin download section
+function hideAdminDownloadSection() {
+    adminDownloadSection.classList.add('hidden');
+    adminDownloadMessage.classList.add('hidden');
+    adminSecretKeyInput.value = '';
+}
+
+// Event listener for admin download button
+adminDownloadBtn.addEventListener('click', async () => {
+    const enteredKey = adminSecretKeyInput.value.trim();
+    if (enteredKey !== adminSecretKey) {
+        adminDownloadMessage.textContent = 'Invalid secret key.';
+        adminDownloadMessage.classList.remove('hidden');
+        return;
+    }
+    adminDownloadMessage.classList.add('hidden');
+
+    try {
+        // Fetch complete data download endpoint
+        const response = await fetch('/data/complete-download', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            adminDownloadMessage.textContent = 'Failed to download data.';
+            adminDownloadMessage.classList.remove('hidden');
+            return;
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'complete_quiz_data.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        adminDownloadMessage.textContent = 'Download started.';
+        adminDownloadMessage.classList.remove('hidden');
+    } catch (error) {
+        adminDownloadMessage.textContent = 'An error occurred during download.';
+        adminDownloadMessage.classList.remove('hidden');
+    }
+});
+
+// Show admin download section only if user is logged in
+if (accessToken) {
+    showAdminDownloadSection();
+} else {
+    hideAdminDownloadSection();
 }
