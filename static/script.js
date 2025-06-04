@@ -347,8 +347,18 @@ function hideAdminDownloadSection() {
     adminSecretKeyInput.value = '';
 }
 
-// Show admin download section only if user is logged in and on auth section
-if (accessToken && authSection.classList.contains('hidden')) {
+function showAdminDownloadSection() {
+    adminDownloadSection.classList.remove('hidden');
+}
+
+function hideAdminDownloadSection() {
+    adminDownloadSection.classList.add('hidden');
+    adminDownloadMessage.classList.add('hidden');
+    adminSecretKeyInput.value = '';
+}
+
+// Show admin download section only if user is logged in and auth section is visible (not hidden)
+if (accessToken && !authSection.classList.contains('hidden')) {
     showAdminDownloadSection();
 } else {
     hideAdminDownloadSection();
