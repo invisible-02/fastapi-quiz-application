@@ -59,7 +59,7 @@ function showMessage(message, isError = false) {
     messageToast.classList.remove('bg-gray-800', 'bg-red-500');
     messageToast.classList.add(isError ? 'bg-red-500' : 'bg-gray-800');
     messageToast.classList.add('toast-show');
-    
+
     setTimeout(() => {
         messageToast.classList.remove('toast-show');
         messageToast.classList.add('toast-hide');
@@ -180,7 +180,7 @@ function showQuestion() {
     }
 
     const question = currentQuestions[currentQuestionIndex];
-    questionText.textContent = question.question;
+    questionText.textContent = question.question_text;
 
     // Reset option selection
     document.querySelectorAll('.option-btn').forEach(btn => {
