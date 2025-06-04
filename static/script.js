@@ -268,11 +268,6 @@ function showAuthSection() {
     quizSection.classList.add('hidden');
 }
 
-const adminSecretKey = "FirstApplication@iitmz"; // Replace with your actual secret key
-
-const adminUsername = "admin"; // Predefined admin username
-const adminPassword = "admin123"; // Predefined admin password
-
 const adminUsername = "admin"; // Predefined admin username
 const adminPassword = "admin123"; // Predefined admin password
 
