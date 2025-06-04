@@ -273,37 +273,13 @@ const adminSecretKey = "FirstApplication@iitmz"; // Replace with your actual sec
 const adminUsername = "admin"; // Predefined admin username
 const adminPassword = "admin123"; // Predefined admin password
 
-// Check for existing session
-const savedToken = localStorage.getItem('accessToken');
-if (savedToken) {
-    accessToken = savedToken;
-    showQuizSection();
-    updateProgress();
-}
-
-// Admin Login Section Elements
-const adminLoginSection = document.getElementById('adminLoginSection');
-const adminLoginForm = document.getElementById('adminLoginForm');
-const adminUsernameInput = document.getElementById('adminUsername');
-const adminPasswordInput = document.getElementById('adminPassword');
-const adminLoginMessage = document.getElementById('adminLoginMessage');
+const adminUsername = "admin"; // Predefined admin username
+const adminPassword = "admin123"; // Predefined admin password
 
 // Admin Download Section Elements
 const adminDownloadSection = document.getElementById('adminDownloadSection');
 const adminDownloadBtn = document.getElementById('adminDownloadBtn');
 const adminDownloadMessage = document.getElementById('adminDownloadMessage');
-
-// Show admin login section only if user is logged in and quiz section is visible
-function showAdminLoginSection() {
-    adminLoginSection.classList.remove('hidden');
-}
-
-function hideAdminLoginSection() {
-    adminLoginSection.classList.add('hidden');
-    adminLoginMessage.classList.add('hidden');
-    adminUsernameInput.value = '';
-    adminPasswordInput.value = '';
-}
 
 // Show admin download section
 function showAdminDownloadSection() {
@@ -316,30 +292,11 @@ function hideAdminDownloadSection() {
     adminDownloadMessage.classList.add('hidden');
 }
 
-// Admin login form submit handler
-adminLoginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const enteredUsername = adminUsernameInput.value.trim();
-    const enteredPassword = adminPasswordInput.value.trim();
-
-    if (enteredUsername === adminUsername && enteredPassword === adminPassword) {
-        hideAdminLoginSection();
-        showAdminDownloadSection();
-    } else {
-        adminLoginMessage.textContent = 'Invalid admin credentials.';
-        adminLoginMessage.classList.remove('hidden');
-    }
-});
-
 // Event listener for admin download button
 adminDownloadBtn.addEventListener('click', async () => {
     try {
         // Fetch complete data download endpoint
-        const response = await fetch('/data/complete-download', {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`
-            }
-        });
+        const response = await fetch('/data/complete-download');
 
         if (!response.ok) {
             adminDownloadMessage.textContent = 'Failed to download data.';
@@ -364,11 +321,5 @@ adminDownloadBtn.addEventListener('click', async () => {
     }
 });
 
-// Show admin login section only if user is logged in and quiz section is visible
-if (accessToken && !authSection.classList.contains('hidden')) {
-    showAdminLoginSection();
-    hideAdminDownloadSection();
-} else {
-    hideAdminLoginSection();
-    hideAdminDownloadSection();
-}
+// Show admin download section by default
+showAdminDownloadSection();
