@@ -347,19 +347,97 @@ function hideAdminDownloadSection() {
     adminSecretKeyInput.value = '';
 }
 
+const adminUsername = "admin"; // Predefined admin username
+const adminPassword = "admin123"; // Predefined admin password
+
+// Admin Login Section Elements
+const adminLoginSection = document.getElementById('adminLoginSection');
+const adminLoginForm = document.getElementById('adminLoginForm');
+const adminUsernameInput = document.getElementById('adminUsername');
+const adminPasswordInput = document.getElementById('adminPassword');
+const adminLoginMessage = document.getElementById('adminLoginMessage');
+
+// Admin Download Section Elements
+const adminDownloadSection = document.getElementById('adminDownloadSection');
+const adminDownloadBtn = document.getElementById('adminDownloadBtn');
+const adminDownloadMessage = document.getElementById('adminDownloadMessage');
+
+// Show admin login section only if user is logged in and quiz section is visible
+function showAdminLoginSection() {
+    adminLoginSection.classList.remove('hidden');
+}
+
+function hideAdminLoginSection() {
+    adminLoginSection.classList.add('hidden');
+    adminLoginMessage.classList.add('hidden');
+    adminUsernameInput.value = '';
+    adminPasswordInput.value = '';
+}
+
+// Show admin download section
 function showAdminDownloadSection() {
     adminDownloadSection.classList.remove('hidden');
 }
 
+// Hide admin download section
 function hideAdminDownloadSection() {
     adminDownloadSection.classList.add('hidden');
     adminDownloadMessage.classList.add('hidden');
-    adminSecretKeyInput.value = '';
 }
 
-// Show admin download section only if user is logged in and auth section is visible (not hidden)
+// Admin login form submit handler
+adminLoginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const enteredUsername = adminUsernameInput.value.trim();
+    const enteredPassword = adminPasswordInput.value.trim();
+
+    if (enteredUsername === adminUsername && enteredPassword === adminPassword) {
+        hideAdminLoginSection();
+        showAdminDownloadSection();
+    } else {
+        adminLoginMessage.textContent = 'Invalid admin credentials.';
+        adminLoginMessage.classList.remove('hidden');
+    }
+});
+
+// Event listener for admin download button
+adminDownloadBtn.addEventListener('click', async () => {
+    try {
+        // Fetch complete data download endpoint
+        const response = await fetch('/data/complete-download', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            adminDownloadMessage.textContent = 'Failed to download data.';
+            adminDownloadMessage.classList.remove('hidden');
+            return;
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'complete_quiz_data.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        adminDownloadMessage.textContent = 'Download started.';
+        adminDownloadMessage.classList.remove('hidden');
+    } catch (error) {
+        adminDownloadMessage.textContent = 'An error occurred during download.';
+        adminDownloadMessage.classList.remove('hidden');
+    }
+});
+
+// Show admin login section only if user is logged in and quiz section is visible
 if (accessToken && !authSection.classList.contains('hidden')) {
-    showAdminDownloadSection();
+    showAdminLoginSection();
+    hideAdminDownloadSection();
 } else {
+    hideAdminLoginSection();
     hideAdminDownloadSection();
 }
