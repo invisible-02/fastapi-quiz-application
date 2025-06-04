@@ -6,7 +6,9 @@ modules = ["python-3.12", "nodejs-20", "web"]
 PYTHONPATH = "."
 
 [deployment]
-run = ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port 3000"]
+build = ["sh", "-c", "pip install -r requirements-updated.txt"]
+deploymentTarget = "static"
+publicDir = "static/"
 
 [nix]
 channel = "stable-24_05"
