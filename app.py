@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from pydantic import BaseModel
 import random
+from sqlalchemy import select
 from utils import record_to_dict, records_to_list
 
 from database import database, users, questions, assignments
@@ -33,7 +34,7 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 async def get_user(username: str):
-    query = users.select().where(users.c.username == username)
+    query = select(users).where(users.c.username == username)
     user = await database.fetch_one(query)
     return user
 
@@ -106,7 +107,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @app.get("/start")
 async def start_quiz(current_user: dict = Depends(get_current_user)):
     # Fetch all questions
-    query = questions.select()
+    query = select(questions)
     all_questions = await database.fetch_all(query)
     if len(all_questions) < ASSIGNED_QUESTION_COUNT:
         raise HTTPException(status_code=400, detail="Insufficient questions available")
@@ -145,7 +146,7 @@ async def submit_answer(
     current_user: dict = Depends(get_current_user)
 ):
     # Check if question is assigned to user
-    query = assignments.select().where(
+    query = select(assignments).where(
         (assignments.c.user_id == current_user["id"]) &
         (assignments.c.question_id == answer_input.question_id)
     )
@@ -168,7 +169,7 @@ async def submit_answer(
 @app.get("/progress")
 async def get_progress(current_user: dict = Depends(get_current_user)):
     # Count answered questions
-    answered_query = assignments.select().where(
+    answered_query = select(assignments).where(
         (assignments.c.user_id == current_user["id"]) &
         (assignments.c.answer != None)
     )
@@ -176,7 +177,7 @@ async def get_progress(current_user: dict = Depends(get_current_user)):
     answered_count = len(answered)
 
     # Count total assigned questions
-    total_query = assignments.select().where(assignments.c.user_id == current_user["id"])
+    total_query = select(assignments).where(assignments.c.user_id == current_user["id"])
     total = await database.fetch_all(total_query)
     total_count = len(total)
 
@@ -190,14 +191,14 @@ async def get_progress(current_user: dict = Depends(get_current_user)):
 @app.get("/data/questions")
 async def get_all_questions(current_user: dict = Depends(get_current_user)):
     """Get all available questions in the database"""
-    query = questions.select()
+    query = select(questions)
     all_questions = await database.fetch_all(query)
     return {"questions": records_to_list(all_questions)}
 
 @app.get("/data/user-assignments")
 async def get_user_assignments(current_user: dict = Depends(get_current_user)):
     """Get all assignments for the current user"""
-    query = assignments.select().where(assignments.c.user_id == current_user["id"])
+    query = select(assignments).where(assignments.c.user_id == current_user["id"])
     user_assignments = await database.fetch_all(query)
     return {"assignments": records_to_list(user_assignments)}
 
@@ -205,7 +206,7 @@ async def get_user_assignments(current_user: dict = Depends(get_current_user)):
 async def get_detailed_progress(current_user: dict = Depends(get_current_user)):
     """Get detailed progress including answered and remaining questions"""
     # Get all assignments for the user
-    assignments_query = assignments.select().where(assignments.c.user_id == current_user["id"])
+    assignments_query = select(assignments).where(assignments.c.user_id == current_user["id"])
     user_assignments = await database.fetch_all(assignments_query)
 
     # Convert to dict format
@@ -232,7 +233,7 @@ import json
 @app.get("/data/user-progress/download")
 async def download_detailed_progress(current_user: dict = Depends(get_current_user)):
     """Download detailed progress as a JSON file"""
-    assignments_query = assignments.select().where(assignments.c.user_id == current_user["id"])
+    assignments_query = select(assignments).where(assignments.c.user_id == current_user["id"])
     user_assignments = await database.fetch_all(assignments_query)
     assignments_data = records_to_list(user_assignments)
     total = len(assignments_data)
@@ -256,12 +257,12 @@ async def download_detailed_progress(current_user: dict = Depends(get_current_us
 async def download_complete_data(current_user: dict = Depends(get_current_user)):
     """Download complete data including questions, assignments, and progress as a JSON file"""
     # Fetch all questions
-    questions_query = questions.select()
+    questions_query = select(questions)
     all_questions = await database.fetch_all(questions_query)
     questions_data = records_to_list(all_questions)
 
     # Fetch user assignments
-    assignments_query = assignments.select().where(assignments.c.user_id == current_user["id"])
+    assignments_query = select(assignments).where(assignments.c.user_id == current_user["id"])
     user_assignments = await database.fetch_all(assignments_query)
     assignments_data = records_to_list(user_assignments)
 
