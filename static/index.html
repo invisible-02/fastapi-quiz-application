@@ -154,41 +154,43 @@
                     id="questionCard"
                     class="bg-white rounded-xl shadow-md p-6"
                 >
-                    <h3
-                        id="questionText"
-                        class="text-xl font-semibold text-gray-900 mb-6"
+                <div id="questionMeta" class="mb-4 p-4 bg-gray-100 rounded-lg text-sm text-gray-700 hidden">
+                    <!-- Dynamic meta info will be inserted here -->
+                </div>
+                <h3
+                    id="questionText"
+                    class="text-xl font-semibold text-gray-900 mb-6"
+                >
+                    Click Start Quiz to begin
+                </h3>
+                <div id="optionsContainer" class="space-y-4 mb-6">
+                    <button
+                        class="option-btn w-full py-3 px-6 text-left border-2 border-gray-200 rounded-lg hover:border-blue-500 focus:outline-none focus:border-blue-500 transition duration-200"
+                        data-value="Yes"
                     >
-                        Click Start Quiz to begin<br>
-                        If the given question seems to be a relevant statistics for cricket click "Yes" else click "No"
-                    </h3>
-                    <div id="optionsContainer" class="space-y-4 mb-6">
-                        <button
-                            class="option-btn w-full py-3 px-6 text-left border-2 border-gray-200 rounded-lg hover:border-blue-500 focus:outline-none focus:border-blue-500 transition duration-200"
-                            data-value="Yes"
-                        >
-                            Yes
-                        </button>
-                        <button
-                            class="option-btn w-full py-3 px-6 text-left border-2 border-gray-200 rounded-lg hover:border-blue-500 focus:outline-none focus:border-blue-500 transition duration-200"
-                            data-value="No"
-                        >
-                            No
-                        </button>
-                    </div>
-                    <div class="flex justify-between">
-                        <button
-                            id="startQuizBtn"
-                            class="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition duration-200"
-                        >
-                            Start Quiz
-                        </button>
-                        <button
-                            id="nextQuestionBtn"
-                            class="bg-gray-500 text-white py-2 px-6 rounded-md hover:bg-gray-600 transition duration-200 hidden"
-                        >
-                            Next Question
-                        </button>
-                    </div>
+                        Yes
+                    </button>
+                    <button
+                        class="option-btn w-full py-3 px-6 text-left border-2 border-gray-200 rounded-lg hover:border-blue-500 focus:outline-none focus:border-blue-500 transition duration-200"
+                        data-value="No"
+                    >
+                        No
+                    </button>
+                </div>
+                <div class="flex justify-between">
+                    <button
+                        id="startQuizBtn"
+                        class="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition duration-200"
+                    >
+                        Start Quiz
+                    </button>
+                    <button
+                        id="nextQuestionBtn"
+                        class="bg-gray-500 text-white py-2 px-6 rounded-md hover:bg-gray-600 transition duration-200 hidden"
+                    >
+                        Next Question
+                    </button>
+                </div>
                 </div>
             </div>
         </div>
@@ -201,7 +203,24 @@
             <p id="messageText"></p>
         </div>
 
-
+        <!-- Admin Download Section -->
+        <div id="adminLoginSection" class="container mx-auto px-4 py-8 hidden">
+            <div class="max-w-md mx-auto bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-4 text-gray-900">Admin Login</h2>
+                <form id="adminLoginForm" class="space-y-4">
+                    <div>
+                        <label for="adminUsername" class="block text-gray-700 font-semibold mb-2">Username</label>
+                        <input type="text" id="adminUsername" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                    </div>
+                    <div>
+                        <label for="adminPassword" class="block text-gray-700 font-semibold mb-2">Password</label>
+                        <input type="password" id="adminPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                    </div>
+                    <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200">Login</button>
+                </form>
+                <p id="adminLoginMessage" class="mt-4 text-red-600 hidden"></p>
+            </div>
+        </div>
 
 
     <script src="/static/script.js"></script>
