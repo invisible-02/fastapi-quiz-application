@@ -187,16 +187,16 @@ function showQuestion() {
     const metaDiv = document.getElementById('questionMeta');
     metaDiv.innerHTML = `
         <div class="flex justify-between">
-            <div><strong>Req Runs:</strong> ${question.req_runs ?? 'N/A'}</div>
-            <div><strong>Balls Remaining:</strong> ${question.balls_remaining}</div>
-            <div><strong>Batsman Runs:</strong> ${question.batsman_total_runs}</div>
-            <div><strong>Batsman Balls:</strong> ${question.batsman_balls_faced}</div>
+            <div><strong>Req Runs:</strong> ${question.req_runs !== null ? question.req_runs : 'N/A'}</div>
+            <div><strong>Balls Remaining:</strong> ${question.balls_remaining !== null ? question.balls_remaining : 'N/A'}</div>
+            <div><strong>Batsman Runs:</strong> ${question.batsman_total_runs !== null ? question.batsman_total_runs : 'N/A'}</div>
+            <div><strong>Batsman Balls:</strong> ${question.batsman_balls_faced !== null ? question.batsman_balls_faced : 'N/A'}</div>
         </div>
         <div class="flex justify-between mt-1">
-            <div><strong>Nonstriker Runs:</strong> ${question.nonstriker_total_runs}</div>
-            <div><strong>Nonstriker Balls:</strong> ${question.nonstriker_balls_faced}</div>
-            <div><strong>Team Run Rate:</strong> ${question.team_run_rate}</div>
-            <div><strong>Wickets:</strong> ${question.wickets}</div>
+            <div><strong>Nonstriker Runs:</strong> ${question.nonstriker_total_runs !== null ? question.nonstriker_total_runs : 'N/A'}</div>
+            <div><strong>Nonstriker Balls:</strong> ${question.nonstriker_balls_faced !== null ? question.nonstriker_balls_faced : 'N/A'}</div>
+            <div><strong>Team Run Rate:</strong> ${question.team_run_rate !== null ? question.team_run_rate : 'N/A'}</div>
+            <div><strong>Wickets:</strong> ${question.wickets !== null ? question.wickets : 'N/A'}</div>
         </div>
     `;
     metaDiv.classList.remove('hidden');
