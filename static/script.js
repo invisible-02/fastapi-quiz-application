@@ -181,22 +181,34 @@ function showQuestion() {
     }
 
     const question = currentQuestions[currentQuestionIndex];
-    questionText.textContent = question.question;
+    // Fix: Use 'question.question' or 'question.question_text' depending on your data
+    questionText.textContent = question.question || question.question_text || 'Question text not available';
 
     // Show meta info above question
     const metaDiv = document.getElementById('questionMeta');
+
+    // Defensive checks for missing or string values that should be numbers
+    const reqRuns = (question.req_runs !== null && !isNaN(question.req_runs)) ? question.req_runs : 'N/A';
+    const ballsRemaining = (question.balls_remaining !== null && !isNaN(question.balls_remaining)) ? question.balls_remaining : 'N/A';
+    const batsmanRuns = (question.batsman_total_runs !== null && !isNaN(question.batsman_total_runs)) ? question.batsman_total_runs : 'N/A';
+    const batsmanBalls = (question.batsman_balls_faced !== null && !isNaN(question.batsman_balls_faced)) ? question.batsman_balls_faced : 'N/A';
+    const nonstrikerRuns = (question.nonstriker_total_runs !== null && !isNaN(question.nonstriker_total_runs)) ? question.nonstriker_total_runs : 'N/A';
+    const nonstrikerBalls = (question.nonstriker_balls_faced !== null && !isNaN(question.nonstriker_balls_faced)) ? question.nonstriker_balls_faced : 'N/A';
+    const teamRunRate = (question.team_run_rate !== null && !isNaN(parseFloat(question.team_run_rate))) ? question.team_run_rate : 'N/A';
+    const wickets = (question.wickets !== null && !isNaN(question.wickets)) ? question.wickets : 'N/A';
+
     metaDiv.innerHTML = `
         <div class="flex justify-between">
-            <div><strong>Req Runs:</strong> ${question.req_runs !== null ? question.req_runs : 'N/A'}</div>
-            <div><strong>Balls Remaining:</strong> ${question.balls_remaining !== null ? question.balls_remaining : 'N/A'}</div>
-            <div><strong>Batsman Runs:</strong> ${question.batsman_total_runs !== null ? question.batsman_total_runs : 'N/A'}</div>
-            <div><strong>Batsman Balls:</strong> ${question.batsman_balls_faced !== null ? question.batsman_balls_faced : 'N/A'}</div>
+            <div><strong>Req Runs:</strong> ${reqRuns}</div>
+            <div><strong>Balls Remaining:</strong> ${ballsRemaining}</div>
+            <div><strong>Batsman Runs:</strong> ${batsmanRuns}</div>
+            <div><strong>Batsman Balls:</strong> ${batsmanBalls}</div>
         </div>
         <div class="flex justify-between mt-1">
-            <div><strong>Nonstriker Runs:</strong> ${question.nonstriker_total_runs !== null ? question.nonstriker_total_runs : 'N/A'}</div>
-            <div><strong>Nonstriker Balls:</strong> ${question.nonstriker_balls_faced !== null ? question.nonstriker_balls_faced : 'N/A'}</div>
-            <div><strong>Team Run Rate:</strong> ${question.team_run_rate !== null ? question.team_run_rate : 'N/A'}</div>
-            <div><strong>Wickets:</strong> ${question.wickets !== null ? question.wickets : 'N/A'}</div>
+            <div><strong>Nonstriker Runs:</strong> ${nonstrikerRuns}</div>
+            <div><strong>Nonstriker Balls:</strong> ${nonstrikerBalls}</div>
+            <div><strong>Team Run Rate:</strong> ${teamRunRate}</div>
+            <div><strong>Wickets:</strong> ${wickets}</div>
         </div>
     `;
     metaDiv.classList.remove('hidden');
