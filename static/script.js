@@ -176,11 +176,30 @@ function showQuestion() {
         nextQuestionBtn.classList.add('hidden');
         startQuizBtn.classList.remove('hidden');
         startQuizBtn.textContent = 'Start New Quiz';
+        document.getElementById('questionMeta').classList.add('hidden');
         return;
     }
 
     const question = currentQuestions[currentQuestionIndex];
-    questionText.textContent = question.question_text;
+    questionText.textContent = question.question;
+
+    // Show meta info above question
+    const metaDiv = document.getElementById('questionMeta');
+    metaDiv.innerHTML = `
+        <div class="flex justify-between">
+            <div><strong>Req Runs:</strong> ${question.req_runs ?? 'N/A'}</div>
+            <div><strong>Balls Remaining:</strong> ${question.balls_remaining}</div>
+            <div><strong>Batsman Runs:</strong> ${question.batsman_total_runs}</div>
+            <div><strong>Batsman Balls:</strong> ${question.batsman_balls_faced}</div>
+        </div>
+        <div class="flex justify-between mt-1">
+            <div><strong>Nonstriker Runs:</strong> ${question.nonstriker_total_runs}</div>
+            <div><strong>Nonstriker Balls:</strong> ${question.nonstriker_balls_faced}</div>
+            <div><strong>Team Run Rate:</strong> ${question.team_run_rate}</div>
+            <div><strong>Wickets:</strong> ${question.wickets}</div>
+        </div>
+    `;
+    metaDiv.classList.remove('hidden');
 
     // Reset option selection
     document.querySelectorAll('.option-btn').forEach(btn => {
