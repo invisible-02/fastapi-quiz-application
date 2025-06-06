@@ -24,6 +24,14 @@ questions = Table(
     Column("id", Integer, primary_key=True),
     Column("question_text", Text),
     Column("options", Text),  # JSON string of options
+    Column("req_runs", Integer, nullable=True),
+    Column("balls_remaining", Integer, nullable=True),
+    Column("batsman_total_runs", Integer, nullable=True),
+    Column("batsman_balls_faced", Integer, nullable=True),
+    Column("nonstriker_total_runs", Integer, nullable=True),
+    Column("nonstriker_balls_faced", Integer, nullable=True),
+    Column("team_run_rate", String, nullable=True),
+    Column("wickets", Integer, nullable=True),
 )
 
 assignments = Table(
