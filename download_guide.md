@@ -76,6 +76,6 @@ This command will save the file as `complete_quiz_data.json` in your current dir
 - Always keep your access token secure.
 - The frontend app handles authentication and token management automatically if you use the UI.
 
----
-
-If you need any help with these steps or want me to assist with automated scripts, feel free to ask!
+C:\Users\shivam>curl -X POST https://data-collection-fe4a.onrender.com/token -d "username=shivam&password=sssss"
+{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaGl2YW0iLCJleHAiOjE3NDkyMDg2OTd9.RxRbM9w3qmm5lmYJwHAaY5jLbOM2gbR_MZMR0COTLLM","token_type":"bearer"}
+C:\Users\shivam>curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzaGl2YW0iLCJleHAiOjE3NDkyMDg2OTd9.RxRbM9w3qmm5lmYJwHAaY5jLbOM2gbR_MZMR0COTLLM" https://data-collection-fe4a.onrender.com/data/complete-download -o complete_quiz_data.json
