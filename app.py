@@ -139,7 +139,15 @@ async def start_quiz(current_user: dict = Depends(get_current_user)):
         await database.execute(insert_query)
 
     # Prepare response questions with options parsed from JSON string
-    response_questions = records_to_list(selected_questions)
+    response_questions = []
+    for q in selected_questions:
+        question_dict = dict(q)
+        if "options" in question_dict and isinstance(question_dict["options"], str):
+            try:
+                question_dict["options"] = json.loads(question_dict["options"])
+            except Exception:
+                question_dict["options"] = []
+        response_questions.append(question_dict)
 
     return {"message": "Quiz started", "questions": response_questions}
 
