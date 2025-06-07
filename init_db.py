@@ -5,7 +5,7 @@ import os
 
 async def init():
     # Drop all tables to ensure fresh schema
-    #metadata.drop_all(engine)  # Re-enabled to recreate tables and sync schema
+    # metadata.drop_all(engine)  # Commented out to preserve existing data
     # Create tables
     metadata.create_all(engine)
     await database.connect()
