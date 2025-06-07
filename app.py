@@ -16,7 +16,7 @@ from database import database, users, questions, assignments
 # Security configurations
 SECRET_KEY = "your-secret-key-for-jwt"  # In production, use a secure secret key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 75
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 ASSIGNED_QUESTION_COUNT = 100
 
 app = FastAPI()
@@ -332,6 +332,59 @@ async def download_complete_data(
 async def read_root():
     with open("static/index.html", "r") as f:
         return f.read()
+
+@app.get("/data/all-users-complete-download")
+async def download_all_users_complete_data():
+    """Download complete data including questions, assignments, and progress for all users as a JSON file"""
+    # Fetch all questions
+    questions_query = select(questions)
+    all_questions = await database.fetch_all(questions_query)
+    questions_data = records_to_list(all_questions)
+
+    # Fetch all assignments
+    assignments_query = select(assignments)
+    all_assignments = await database.fetch_all(assignments_query)
+    assignments_data = records_to_list(all_assignments)
+
+    # Fetch all users
+    users_query = select(users)
+    all_users = await database.fetch_all(users_query)
+    users_data = records_to_list(all_users)
+
+    # Calculate progress per user
+    progress_per_user = {}
+    for user in users_data:
+        user_id = user["id"]
+        user_assignments = [a for a in assignments_data if a["user_id"] == user_id]
+        total = len(user_assignments)
+        answered = len([a for a in user_assignments if a["answer"] is not None])
+        remaining = total - answered
+        progress_per_user[user["username"]] = {
+            "total_questions": total,
+            "questions_answered": answered,
+            "questions_remaining": remaining,
+            "completion_percentage": (answered / total * 100) if total > 0 else 0
+        }
+
+    complete_data = {
+        "questions": questions_data,
+        "assignments": assignments_data,
+        "users": users_data,
+        "progress_per_user": progress_per_user
+    }
+
+    import io
+    import json
+    from fastapi.responses import StreamingResponse
+
+    json_str = json.dumps(complete_data, indent=4)
+    file_like = io.BytesIO(json_str.encode('utf-8'))
+    headers = {
+        "Content-Disposition": "attachment; filename=all_users_complete_quiz_data.json"
+    }
+    return StreamingResponse(file_like,
+                             media_type="application/json",
+                             headers=headers)
 
 
 if __name__ == "__main__":
