@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 
 # Update DATABASE_URL to use PostgreSQL connection string
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/quizappdb")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://cricket_azy0_user:ypIy2vBkWWI5gdUWHsdABWd1JSgd6jan@dpg-d125vgbuibrs73esq3s0-a/cricket_azy0")
 
 database = Database(DATABASE_URL)
 metadata = MetaData()
