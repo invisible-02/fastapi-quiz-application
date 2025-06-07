@@ -125,9 +125,10 @@ async def start_quiz(current_user: dict = Depends(get_current_user)):
     selected_ids = [q["id"] for q in selected_questions]
 
     # Remove selected questions from questions table
-    for qid in selected_ids:
-        delete_query = questions.delete().where(questions.c.id == qid)
-        await database.execute(delete_query)
+-    for qid in selected_ids:
+-        delete_query = questions.delete().where(questions.c.id == qid)
+-        await database.execute(delete_query)
++    # Removed deletion of questions to avoid foreign key constraint violation
 
     # Assign questions to user
     for q in selected_questions:
