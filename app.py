@@ -16,7 +16,7 @@ from database import database, users, questions, assignments
 # Security configurations
 SECRET_KEY = "your-secret-key-for-jwt"  # In production, use a secure secret key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 75
 ASSIGNED_QUESTION_COUNT = 100
 
 app = FastAPI()
