@@ -114,6 +114,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @app.get("/start")
 async def start_quiz(current_user: dict = Depends(get_current_user)):
     # Fetch all questions
+    # Cleanup orphaned assignments with question_ids not in questions table
+    cleanup_query = assignments.delete().where(
+         ~assignments.c.question_id.in_(
+        select(questions.c.id)
+         )
+    )
+await database.execute(cleanup_query)
     query = select(questions)
     all_questions = await database.fetch_all(query)
     if len(all_questions) < ASSIGNED_QUESTION_COUNT:
