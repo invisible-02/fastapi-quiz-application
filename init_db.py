@@ -25,14 +25,14 @@ async def init():
                     id=q["id"],
                     question_text=q["question"],
                     options=options_json,
-                    req_runs=q.get("req_runs"),
-                    balls_remaining=q.get("balls_remaining"),
-                    batsman_total_runs=q.get("batsman_total_runs"),
-                    batsman_balls_faced=q.get("batsman_balls_faced"),
-                    nonstriker_total_runs=q.get("nonstriker_total_runs"),
-                    nonstriker_balls_faced=q.get("nonstriker_balls_faced"),
-                    team_run_rate=q.get("team_run_rate"),
-                    wickets=q.get("wickets"),
+                    req_runs=str(q.get("req_runs")) if q.get("req_runs") is not None else None,
+                    balls_remaining=str(q.get("balls_remaining")) if q.get("balls_remaining") is not None else None,
+                    batsman_total_runs=str(q.get("batsman_total_runs")) if q.get("batsman_total_runs") is not None else None,
+                    batsman_balls_faced=str(q.get("batsman_balls_faced")) if q.get("batsman_balls_faced") is not None else None,
+                    nonstriker_total_runs=str(q.get("nonstriker_total_runs")) if q.get("nonstriker_total_runs") is not None else None,
+                    nonstriker_balls_faced=str(q.get("nonstriker_balls_faced")) if q.get("nonstriker_balls_faced") is not None else None,
+                    team_run_rate=str(q.get("team_run_rate")) if q.get("team_run_rate") is not None else None,
+                    wickets=str(q.get("wickets")) if q.get("wickets") is not None else None,
                 )
                 await database.execute(query)
 
