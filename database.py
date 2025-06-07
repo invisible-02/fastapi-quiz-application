@@ -5,7 +5,7 @@ import json
 import os
 from datetime import datetime
 
-DATABASE_URL = "sqlite:////data/quizapp.db"
+DATABASE_URL = "sqlite:///./quizapp.db"
 
 database = Database(DATABASE_URL)
 metadata = MetaData()
