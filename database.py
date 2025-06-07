@@ -5,7 +5,8 @@ import json
 import os
 from datetime import datetime
 
-DATABASE_URL = "sqlite:///./quizapp.db"
+# Update DATABASE_URL to use PostgreSQL connection string
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost:5432/quizappdb")
 
 database = Database(DATABASE_URL)
 metadata = MetaData()
@@ -45,7 +46,7 @@ assignments = Table(
 )
 
 engine = sqlalchemy.create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
+    DATABASE_URL
 )
 
 def create_tables():
