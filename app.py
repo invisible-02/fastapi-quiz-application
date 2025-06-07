@@ -1,20 +1,22 @@
 from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
 from pydantic import BaseModel
 import random
+import json
+import io
 from sqlalchemy import select
 from utils import record_to_dict, records_to_list
 
 from database import database, users, questions, assignments
 
 # Security configurations
-SECRET_KEY = "your-secret-key-for-jwt"  # In production, use a secure secret key
+SECRET_KEY = "your-secret-key-for-jwt"  # TODO: Use env var in production
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 75
 ASSIGNED_QUESTION_COUNT = 100
@@ -44,10 +46,7 @@ async def get_user(username: str):
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -83,8 +82,10 @@ async def shutdown():
 
 
 # Routes
+
 @app.post("/register")
 async def register(form_data: OAuth2PasswordRequestForm = Depends()):
+    """Register a new user"""
     user = await get_user(form_data.username)
     if user:
         raise HTTPException(status_code=400,
@@ -99,9 +100,9 @@ async def register(form_data: OAuth2PasswordRequestForm = Depends()):
 
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """Login and obtain JWT token"""
     user = await get_user(form_data.username)
-    if not user or not verify_password(form_data.password,
-                                       user["hashed_password"]):
+    if not user or not verify_password(form_data.password, user["hashed_password"]):
         raise HTTPException(status_code=400,
                             detail="Incorrect username or password")
 
@@ -113,14 +114,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 @app.get("/start")
 async def start_quiz(current_user: dict = Depends(get_current_user)):
-    # Fetch all questions
+    """Start a new quiz and assign questions to the current user"""
     # Cleanup orphaned assignments with question_ids not in questions table
     cleanup_query = assignments.delete().where(
-         ~assignments.c.question_id.in_(
-        select(questions.c.id)
-         )
+        ~assignments.c.question_id.in_(
+            select(questions.c.id)
+        )
     )
-await database.execute(cleanup_query)
+    await database.execute(cleanup_query)
+
+    # Fetch all questions
     query = select(questions)
     all_questions = await database.fetch_all(query)
     if len(all_questions) < ASSIGNED_QUESTION_COUNT:
@@ -131,20 +134,17 @@ await database.execute(cleanup_query)
     selected_questions = random.sample(all_questions, ASSIGNED_QUESTION_COUNT)
     selected_ids = [q["id"] for q in selected_questions]
 
-    # Remove selected questions from questions table
-    # Removed deletion of questions to avoid foreign key constraint violation
-+    # Removed deletion of questions to avoid foreign key constraint violation
-
     # Assign questions to user
     for q in selected_questions:
         insert_query = assignments.insert().values(
             user_id=current_user["id"],
             question_id=q["id"],
             answer=None,
-            assigned_at=datetime.utcnow())
+            assigned_at=datetime.utcnow()
+        )
         await database.execute(insert_query)
 
-    # Prepare response questions with options parsed from JSON string
+    # Prepare response questions with options parsed
     response_questions = []
     for q in selected_questions:
         question_dict = dict(q)
@@ -166,10 +166,11 @@ class AnswerInput(BaseModel):
 @app.post("/answer")
 async def submit_answer(answer_input: AnswerInput,
                         current_user: dict = Depends(get_current_user)):
-    # Check if question is assigned to user
+    """Submit an answer to an assigned question"""
     query = select(assignments).where(
-        (assignments.c.user_id == current_user["id"])
-        & (assignments.c.question_id == answer_input.question_id))
+        (assignments.c.user_id == current_user["id"]) &
+        (assignments.c.question_id == answer_input.question_id)
+    )
     assignment = await database.fetch_one(query)
     if not assignment:
         raise HTTPException(status_code=404, detail="Question not assigned")
@@ -180,9 +181,9 @@ async def submit_answer(answer_input: AnswerInput,
 
     # Update answer
     update_query = assignments.update().where(
-        (assignments.c.user_id == current_user["id"])
-        & (assignments.c.question_id == answer_input.question_id)).values(
-            answer=answer_input.answer)
+        (assignments.c.user_id == current_user["id"]) &
+        (assignments.c.question_id == answer_input.question_id)
+    ).values(answer=answer_input.answer)
     await database.execute(update_query)
 
     return {"message": "Answer saved successfully"}
@@ -190,33 +191,32 @@ async def submit_answer(answer_input: AnswerInput,
 
 @app.get("/progress")
 async def get_progress(current_user: dict = Depends(get_current_user)):
-    # Count answered questions
-    answered_query = select(
-        assignments).where((assignments.c.user_id == current_user["id"])
-                           & (assignments.c.answer != None))
+    """Get current progress"""
+    answered_query = select(assignments).where(
+        (assignments.c.user_id == current_user["id"]) &
+        (assignments.c.answer != None)
+    )
     answered = await database.fetch_all(answered_query)
     answered_count = len(answered)
 
-    # Count total assigned questions
     total_query = select(assignments).where(
-        assignments.c.user_id == current_user["id"])
+        assignments.c.user_id == current_user["id"]
+    )
     total = await database.fetch_all(total_query)
     total_count = len(total)
 
     return {
-        "progress":
-        answered_count,
-        "total_questions":
-        total_count,
-        "percentage":
-        (answered_count / total_count) * 100 if total_count > 0 else 0
+        "progress": answered_count,
+        "total_questions": total_count,
+        "percentage": (answered_count / total_count) * 100 if total_count > 0 else 0
     }
 
 
 # Data extraction endpoints
+
 @app.get("/data/questions")
 async def get_all_questions(current_user: dict = Depends(get_current_user)):
-    """Get all available questions in the database"""
+    """Get all available questions"""
     query = select(questions)
     all_questions = await database.fetch_all(query)
     return {"questions": records_to_list(all_questions)}
@@ -226,24 +226,21 @@ async def get_all_questions(current_user: dict = Depends(get_current_user)):
 async def get_user_assignments(current_user: dict = Depends(get_current_user)):
     """Get all assignments for the current user"""
     query = select(assignments).where(
-        assignments.c.user_id == current_user["id"])
+        assignments.c.user_id == current_user["id"]
+    )
     user_assignments = await database.fetch_all(query)
     return {"assignments": records_to_list(user_assignments)}
 
 
 @app.get("/data/user-progress")
-async def get_detailed_progress(
-        current_user: dict = Depends(get_current_user)):
-    """Get detailed progress including answered and remaining questions"""
-    # Get all assignments for the user
+async def get_detailed_progress(current_user: dict = Depends(get_current_user)):
+    """Get detailed progress"""
     assignments_query = select(assignments).where(
-        assignments.c.user_id == current_user["id"])
+        assignments.c.user_id == current_user["id"]
+    )
     user_assignments = await database.fetch_all(assignments_query)
-
-    # Convert to dict format
     assignments_data = records_to_list(user_assignments)
 
-    # Calculate statistics
     total = len(assignments_data)
     answered = len([a for a in assignments_data if a["answer"] is not None])
     remaining = total - answered
@@ -257,23 +254,19 @@ async def get_detailed_progress(
     }
 
 
-from fastapi.responses import JSONResponse
-from fastapi.responses import StreamingResponse
-import io
-import json
-
-
 @app.get("/data/user-progress/download")
-async def download_detailed_progress(
-        current_user: dict = Depends(get_current_user)):
-    """Download detailed progress as a JSON file"""
+async def download_detailed_progress(current_user: dict = Depends(get_current_user)):
+    """Download detailed progress as JSON"""
     assignments_query = select(assignments).where(
-        assignments.c.user_id == current_user["id"])
+        assignments.c.user_id == current_user["id"]
+    )
     user_assignments = await database.fetch_all(assignments_query)
     assignments_data = records_to_list(user_assignments)
+
     total = len(assignments_data)
     answered = len([a for a in assignments_data if a["answer"] is not None])
     remaining = total - answered
+
     progress_data = {
         "total_questions": total,
         "questions_answered": answered,
@@ -281,6 +274,7 @@ async def download_detailed_progress(
         "completion_percentage": (answered / total * 100) if total > 0 else 0,
         "assignments": assignments_data
     }
+
     json_str = json.dumps(progress_data, indent=4)
     file_like = io.BytesIO(json_str.encode('utf-8'))
     headers = {
@@ -292,24 +286,22 @@ async def download_detailed_progress(
 
 
 @app.get("/data/complete-download")
-async def download_complete_data(
-        current_user: dict = Depends(get_current_user)):
-    """Download complete data including questions, assignments, and progress as a JSON file"""
-    # Fetch all questions
+async def download_complete_data(current_user: dict = Depends(get_current_user)):
+    """Download complete data as JSON"""
     questions_query = select(questions)
     all_questions = await database.fetch_all(questions_query)
     questions_data = records_to_list(all_questions)
 
-    # Fetch user assignments
     assignments_query = select(assignments).where(
-        assignments.c.user_id == current_user["id"])
+        assignments.c.user_id == current_user["id"]
+    )
     user_assignments = await database.fetch_all(assignments_query)
     assignments_data = records_to_list(user_assignments)
 
-    # Calculate progress
     total = len(assignments_data)
     answered = len([a for a in assignments_data if a["answer"] is not None])
     remaining = total - answered
+
     progress_data = {
         "total_questions": total,
         "questions_answered": answered,
@@ -333,31 +325,21 @@ async def download_complete_data(
                              headers=headers)
 
 
-# Serve the HTML page
-@app.get("/", response_class=HTMLResponse)
-async def read_root():
-    with open("static/index.html", "r") as f:
-        return f.read()
-
 @app.get("/data/all-users-complete-download")
 async def download_all_users_complete_data():
-    """Download complete data including questions, assignments, and progress for all users as a JSON file"""
-    # Fetch all questions
+    """Download complete data for all users as JSON"""
     questions_query = select(questions)
     all_questions = await database.fetch_all(questions_query)
     questions_data = records_to_list(all_questions)
 
-    # Fetch all assignments
     assignments_query = select(assignments)
     all_assignments = await database.fetch_all(assignments_query)
     assignments_data = records_to_list(all_assignments)
 
-    # Fetch all users
     users_query = select(users)
     all_users = await database.fetch_all(users_query)
     users_data = records_to_list(all_users)
 
-    # Calculate progress per user
     progress_per_user = {}
     for user in users_data:
         user_id = user["id"]
@@ -379,10 +361,6 @@ async def download_all_users_complete_data():
         "progress_per_user": progress_per_user
     }
 
-    import io
-    import json
-    from fastapi.responses import StreamingResponse
-
     json_str = json.dumps(complete_data, indent=4)
     file_like = io.BytesIO(json_str.encode('utf-8'))
     headers = {
@@ -391,6 +369,17 @@ async def download_all_users_complete_data():
     return StreamingResponse(file_like,
                              media_type="application/json",
                              headers=headers)
+
+
+# Serve HTML index page
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    """Serve index.html"""
+    try:
+        with open("static/index.html", "r") as f:
+            return f.read()
+    except Exception:
+        raise HTTPException(status_code=500, detail="index.html not found")
 
 
 if __name__ == "__main__":
