@@ -4,7 +4,8 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 pydantic
-databases[sqlite]
 aiosqlite
 sqlalchemy
+databases[postgresql]
 asyncpg
+psycopg2-binary
